@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 import glob
 
 # 페이지 설정
@@ -17,33 +16,34 @@ plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['axes.unicode_minus'] = False
 
 st.title("📚 K콘텐츠 간행물정보 제목 길이별 조회수 분석")
-st.markdown("간행물 데이터를 바탕으로 메인 제목 및 서브제목 길이에 따른 조회수 관계를 분석합니다.")
+st.markdown("깃허브에 업로드된 간행물 데이터를 바탕으로 메인 제목 및 서브제목 길이에 따른 조회수 관계를 분석합니다.")
 
-# 데이터 로드 함수 (자동 파일 검색 및 유니코드 문제 해결)
+# 데이터 로드 함수 (폴더 안의 CSV 파일을 무조건 자동 탐색)
 @st.cache_data
 def load_data():
-    # 폴더 내 파일 중 '간행물정보'가 포함된 파일을 자동으로 찾음
-    matched_files = [f for f in glob.glob("*.csv") if "간행물정보" in f or "K콘텐츠" in f]
+    # 폴더 내에 있는 모든 .csv 파일을 찾음
+    csv_files = glob.glob("*.csv")
     
-    if not matched_files:
-        # 일치하는 파일이 없을 경우 기본 파일명 시도
-        pub_file = "한국콘텐츠진흥원_K콘텐츠 간행물정보_20170310.csv"
-    else:
-        pub_file = matched_files[0]
-        
+    if not csv_files:
+        raise FileNotFoundError("폴더에 CSV 파일이 존재하지 않습니다.")
+    
+    # 첫 번째로 찾아낸 CSV 파일을 대상으로 함
+    target_file = csv_files[0]
+    
     # 파일 읽기 (인코딩 자동 예외 처리)
     try:
-        df_pub = pd.read_csv(pub_file, encoding="utf-8")
+        df_pub = pd.read_csv(target_file, encoding="utf-8")
     except:
-        df_pub = pd.read_csv(pub_file, encoding="cp949")
+        df_pub = pd.read_csv(target_file, encoding="cp949")
         
-    return df_pub
+    return df_pub, target_file
 
 # 데이터 불러오기 실행
 try:
-    df_pub = load_data()
+    df_pub, loaded_file_name = load_data()
+    st.success(f"📂 성공적으로 불러온 데이터 파일: `{loaded_file_name}`")
 except Exception as e:
-    st.error(f"❌ 파일을 불러오는 중 오류가 발생했습니다. 깃허브에 CSV 파일이 업로드되어 있는지 확인해 주세요. (오류내용: {e})")
+    st.error(f"❌ 파일을 불러오는 중 오류가 발생했습니다. (오류내용: {e})")
     st.stop()
 
 # 탭 구성 (메인 제목 분석 vs 서브제목 분석)
