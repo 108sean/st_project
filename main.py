@@ -1,18 +1,17 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 import glob
 
 # 페이지 설정
 st.set_page_config(
     page_title="K콘텐츠 간행물정보 분석",
-    page_icon="📚",
+    page_icon="📊",
     layout="wide"
 )
 
 st.title("📚 K콘텐츠 간행물정보 제목 길이별 조회수 분석")
-st.markdown("간행물 데이터를 바탕으로 제목(글자수)과 조회수의 관계를 분석한 대시보드입니다.")
+st.markdown("마우스를 점 위에 올리면 **기사 제목, 날짜, 조회수**가 팝업으로 나타납니다.")
 
 # 데이터 로드 함수 (폴더 안의 CSV 파일 자동 탐색)
 @st.cache_data
@@ -33,7 +32,6 @@ def load_data():
 # 데이터 불러오기 실행
 try:
     df_pub, loaded_file_name = load_data()
-    st.success(f"📂 성공적으로 불러온 데이터 파일: `{loaded_file_name}`")
 except Exception as e:
     st.error(f"❌ 파일을 불러오는 중 오류가 발생했습니다. (오류내용: {e})")
     st.stop()
@@ -53,14 +51,17 @@ with tab1:
     col2.metric("평균 메인 제목 길이", f"{df_pub['메인제목_길이'].mean():.1f}자")
     col3.metric("평균 조회수", f"{df_pub['조회수'].mean():,.1f}회")
     
-    # 시각화 그래프 (그래프 내부 글자는 영문으로 처리하여 폰트 깨짐 방지)
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.scatterplot(data=df_pub, x='메인제목_길이', y='조회수', alpha=0.6, color='teal', ax=ax)
-    sns.regplot(data=df_pub, x='메인제목_길이', y='조회수', scatter=False, color='coral', ax=ax)
-    ax.set_title("Main Title Length vs Views", fontsize=14)
-    ax.set_xlabel("Title Length (Characters)", fontsize=12)
-    ax.set_ylabel("Views", fontsize=12)
-    st.pyplot(fig)
+    # Plotly 인터랙티브 산점도 (마우스 오버 시 제목, 날짜, 조회수 표시)
+    fig1 = px.scatter(
+        df_pub,
+        x='메인제목_길이',
+        y='조회수',
+        hover_data=['제목', '등록일', '조회수'], # 마우스 올렸을 때 보여줄 정보
+        labels={'메인제목_길이': '제목 길이 (글자수)', '조회수': '조회수'},
+        title="메인 제목 길이별 조회수 분포"
+    )
+    fig1.update_traces(marker=dict(size=8, color='teal'))
+    st.plotly_chart(fig1, use_container_width=True)
 
 with tab2:
     st.subheader("서브제목 길이에 따른 조회수")
@@ -68,7 +69,6 @@ with tab2:
     # 서브제목이 존재하는 데이터만 추출
     df_pub_sub = df_pub.dropna(subset=['서브제목']).copy()
     df_pub_sub['서브제목_길이'] = df_pub_sub['서브제목'].astype(str).apply(len)
-    # 서브조회수가 비어있으면 메인 조회수로 대체
     df_pub_sub['조회수_정제'] = df_pub_sub['서브조회수'].fillna(df_pub_sub['조회수'])
     
     # 주요 지표 요약
@@ -78,13 +78,16 @@ with tab2:
     col3.metric("평균 조회수", f"{df_pub_sub['조회수_정제'].mean():,.1f}회" if len(df_pub_sub) > 0 else "0회")
     
     if len(df_pub_sub) > 0:
-        # 시각화 그래프 (그래프 내부 글자는 영문으로 처리하여 폰트 깨짐 방지)
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.scatterplot(data=df_pub_sub, x='서브제목_길이', y='조회수_정제', alpha=0.7, color='purple', ax=ax)
-        sns.regplot(data=df_pub_sub, x='서브제목_길이', y='조회수_정제', scatter=False, color='darkorange', ax=ax)
-        ax.set_title("Sub Title Length vs Views", fontsize=14)
-        ax.set_xlabel("Sub Title Length (Characters)", fontsize=12)
-        ax.set_ylabel("Views", fontsize=12)
-        st.pyplot(fig)
+        # Plotly 인터랙티브 산점도
+        fig2 = px.scatter(
+            df_pub_sub,
+            x='서브제목_길이',
+            y='조회수_정제',
+            hover_data=['서브제목', '서브등록일', '조회수_정제'], # 서브제목, 날짜, 조회수 표시
+            labels={'서브제목_길이': '서브제목 길이 (글자수)', '조회수_정제': '조회수'},
+            title="서브제목 길이별 조회수 분포"
+        )
+        fig2.update_traces(marker=dict(size=8, color='purple'))
+        st.plotly_chart(fig2, use_container_width=True)
     else:
         st.info("분석할 서브제목 데이터가 존재하지 않습니다.")
