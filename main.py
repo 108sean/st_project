@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+import glob
 
 # 페이지 설정
 st.set_page_config(
@@ -15,14 +17,21 @@ plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['axes.unicode_minus'] = False
 
 st.title("📚 K콘텐츠 간행물정보 제목 길이별 조회수 분석")
-st.markdown("간행물 데이터(2번 파일)를 바탕으로 메인 제목 및 서브제목 길이에 따른 조회수 관계를 분석합니다.")
+st.markdown("간행물 데이터를 바탕으로 메인 제목 및 서브제목 길이에 따른 조회수 관계를 분석합니다.")
 
-# 데이터 로드 함수 (캐싱 적용)
+# 데이터 로드 함수 (자동 파일 검색 및 유니코드 문제 해결)
 @st.cache_data
 def load_data():
-    pub_file = "한국콘텐츠진흥원_K콘텐츠 간행물정보_20170310.csv"
+    # 폴더 내 파일 중 '간행물정보'가 포함된 파일을 자동으로 찾음
+    matched_files = [f for f in glob.glob("*.csv") if "간행물정보" in f or "K콘텐츠" in f]
     
-    # 간행물정보 파일 읽기
+    if not matched_files:
+        # 일치하는 파일이 없을 경우 기본 파일명 시도
+        pub_file = "한국콘텐츠진흥원_K콘텐츠 간행물정보_20170310.csv"
+    else:
+        pub_file = matched_files[0]
+        
+    # 파일 읽기 (인코딩 자동 예외 처리)
     try:
         df_pub = pd.read_csv(pub_file, encoding="utf-8")
     except:
@@ -31,7 +40,11 @@ def load_data():
     return df_pub
 
 # 데이터 불러오기 실행
-df_pub = load_data()
+try:
+    df_pub = load_data()
+except Exception as e:
+    st.error(f"❌ 파일을 불러오는 중 오류가 발생했습니다. 깃허브에 CSV 파일이 업로드되어 있는지 확인해 주세요. (오류내용: {e})")
+    st.stop()
 
 # 탭 구성 (메인 제목 분석 vs 서브제목 분석)
 tab1, tab2 = st.tabs(["📖 메인 제목 길이 분석", "📑 서브제목 길이 분석"])
