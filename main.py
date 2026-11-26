@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.title("📚 K콘텐츠 간행물정보 제목 길이별 조회수 분석")
-st.markdown("마우스를 점 위에 올리면 **기사 제목, 날짜, 조회수**가 팝업으로 나타납니다.")
+st.markdown("마우스를 점 위에 올리면 **기사 제목, 날짜, 조회수**가 팝업으로 나타나며, 추세선이 함께 표시됩니다.")
 
 # 데이터 로드 함수 (폴더 안의 CSV 파일 자동 탐색)
 @st.cache_data
@@ -51,14 +51,15 @@ with tab1:
     col2.metric("평균 메인 제목 길이", f"{df_pub['메인제목_길이'].mean():.1f}자")
     col3.metric("평균 조회수", f"{df_pub['조회수'].mean():,.1f}회")
     
-    # Plotly 인터랙티브 산점도 (마우스 오버 시 제목, 날짜, 조회수 표시)
+    # Plotly 인터랙티브 산점도 + 추세선(trendline="ols") 추가
     fig1 = px.scatter(
         df_pub,
         x='메인제목_길이',
         y='조회수',
-        hover_data=['제목', '등록일', '조회수'], # 마우스 올렸을 때 보여줄 정보
+        hover_data=['제목', '등록일', '조회수'], 
         labels={'메인제목_길이': '제목 길이 (글자수)', '조회수': '조회수'},
-        title="메인 제목 길이별 조회수 분포"
+        title="메인 제목 길이별 조회수 분포 및 추세선",
+        trendline="ols"  # 회귀선(추세선) 추가
     )
     fig1.update_traces(marker=dict(size=8, color='teal'))
     st.plotly_chart(fig1, use_container_width=True)
@@ -78,14 +79,15 @@ with tab2:
     col3.metric("평균 조회수", f"{df_pub_sub['조회수_정제'].mean():,.1f}회" if len(df_pub_sub) > 0 else "0회")
     
     if len(df_pub_sub) > 0:
-        # Plotly 인터랙티브 산점도
+        # Plotly 인터랙티브 산점도 + 추세선(trendline="ols") 추가
         fig2 = px.scatter(
             df_pub_sub,
             x='서브제목_길이',
             y='조회수_정제',
-            hover_data=['서브제목', '서브등록일', '조회수_정제'], # 서브제목, 날짜, 조회수 표시
+            hover_data=['서브제목', '서브등록일', '조회수_정제'], 
             labels={'서브제목_길이': '서브제목 길이 (글자수)', '조회수_정제': '조회수'},
-            title="서브제목 길이별 조회수 분포"
+            title="서브제목 길이별 조회수 분포 및 추세선",
+            trendline="ols"  # 회귀선(추세선) 추가
         )
         fig2.update_traces(marker=dict(size=8, color='purple'))
         st.plotly_chart(fig2, use_container_width=True)
