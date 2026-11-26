@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import glob
-import platform
 
 # 페이지 설정
 st.set_page_config(
@@ -12,19 +11,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# 운영체제별 한글 폰트 설정 (그래프 한글 깨짐 방지)
-if platform.system() == 'Darwin': # Mac
-    plt.rc('font', family='AppleGothic')
-elif platform.system() == 'Windows': # Windows
-    plt.rc('font', family='Malgun Gothic')
-else: # Linux (Streamlit Cloud 환경 포함)
-    # 리눅스 환경 기본 한글 폰트 지정 또는 산세리프 적용
-    plt.rc('font', family='NanumGothic')
-
-plt.rcParams['axes.unicode_minus'] = False
-
 st.title("📚 K콘텐츠 간행물정보 제목 길이별 조회수 분석")
-st.markdown("간행물 데이터를 바탕으로 제목(글자수)과 조회수의 관계를 분석합니다.")
+st.markdown("간행물 데이터를 바탕으로 제목(글자수)과 조회수의 관계를 분석한 대시보드입니다.")
 
 # 데이터 로드 함수 (폴더 안의 CSV 파일 자동 탐색)
 @st.cache_data
@@ -51,7 +39,7 @@ except Exception as e:
     st.stop()
 
 # 탭 구성 (메인 제목 분석 vs 서브제목 분석)
-tab1, tab2 = tab1, tab2 = st.tabs(["📖 메인 제목 길이 분석", "📑 서브제목 길이 분석"])
+tab1, tab2 = st.tabs(["📖 메인 제목 길이 분석", "📑 서브제목 길이 분석"])
 
 with tab1:
     st.subheader("메인 제목 길이에 따른 조회수")
@@ -65,13 +53,13 @@ with tab1:
     col2.metric("평균 메인 제목 길이", f"{df_pub['메인제목_길이'].mean():.1f}자")
     col3.metric("평균 조회수", f"{df_pub['조회수'].mean():,.1f}회")
     
-    # 시각화 그래프 (가로: 제목 길이, 세로: 조회수)
+    # 시각화 그래프 (그래프 내부 글자는 영문으로 처리하여 폰트 깨짐 방지)
     fig, ax = plt.subplots(figsize=(10, 5))
     sns.scatterplot(data=df_pub, x='메인제목_길이', y='조회수', alpha=0.6, color='teal', ax=ax)
     sns.regplot(data=df_pub, x='메인제목_길이', y='조회수', scatter=False, color='coral', ax=ax)
-    ax.set_title("메인 제목 길이별 조회수 분포", fontsize=14)
-    ax.set_xlabel("제목 길이 (글자수)", fontsize=12)
-    ax.set_ylabel("조회수", fontsize=12)
+    ax.set_title("Main Title Length vs Views", fontsize=14)
+    ax.set_xlabel("Title Length (Characters)", fontsize=12)
+    ax.set_ylabel("Views", fontsize=12)
     st.pyplot(fig)
 
 with tab2:
@@ -90,13 +78,13 @@ with tab2:
     col3.metric("평균 조회수", f"{df_pub_sub['조회수_정제'].mean():,.1f}회" if len(df_pub_sub) > 0 else "0회")
     
     if len(df_pub_sub) > 0:
-        # 시각화 그래프 (가로: 서브제목 길이, 세로: 조회수)
+        # 시각화 그래프 (그래프 내부 글자는 영문으로 처리하여 폰트 깨짐 방지)
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.scatterplot(data=df_pub_sub, x='서브제목_길이', y='조회수_정제', alpha=0.7, color='purple', ax=ax)
         sns.regplot(data=df_pub_sub, x='서브제목_길이', y='조회수_정제', scatter=False, color='darkorange', ax=ax)
-        ax.set_title("서브제목 길이별 조회수 분포", fontsize=14)
-        ax.set_xlabel("서브제목 길이 (글자수)", fontsize=12)
-        ax.set_ylabel("조회수", fontsize=12)
+        ax.set_title("Sub Title Length vs Views", fontsize=14)
+        ax.set_xlabel("Sub Title Length (Characters)", fontsize=12)
+        ax.set_ylabel("Views", fontsize=12)
         st.pyplot(fig)
     else:
         st.info("분석할 서브제목 데이터가 존재하지 않습니다.")
