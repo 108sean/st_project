@@ -57,4 +57,4 @@ k콘텐츠 간행물의 어떤 주제와 제목 구조가 대중 관심을 끄�
 code/main.py 실행. 필요한 라이브러리는 requirements.txt.
 
 ## 배포(선택)
-스트림릿 주소:
+스트림릿 주소: https://stproject-20826.streamlit.app/
